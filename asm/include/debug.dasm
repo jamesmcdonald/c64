@@ -1,0 +1,52 @@
+hexhi:          ; return the ascii code of hex value of high nybble of a
+    ldy #$04
+hexhi_shift:
+    lsr
+    dey
+    bne hexhi_shift
+    jmp hex_mapchar
+
+hexlo:          ; return the ascii code of hex value of low nybble of a
+    and #$0f
+hex_mapchar:
+    clc
+    adc #$30
+    cmp #$3a    ; check if we need a letter
+    bmi hexlo_skip
+    adc #$6
+hexlo_skip:
+    rts
+
+hexposprint:    ; move the cursor to y,x, then print a
+    pha
+    clc
+    jsr plot
+    pla
+
+hexprint:       ; print x at the cursor a
+    pha
+    jsr hexhi
+    jsr chrout
+    pla
+    pha
+    jsr hexlo
+    jsr chrout
+    pla
+    rts
+
+_print_x = $fb
+_print_y = $fc
+print:          ; print the 0-terminated string at yx
+    stx _print_x
+    sty _print_y
+    pha
+    ldy #$00
+print_loop:
+    lda (_print_x),y
+    beq print_end
+    jsr chrout
+    iny
+    jmp print_loop
+print_end:
+    pla
+    rts

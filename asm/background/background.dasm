@@ -1,0 +1,18 @@
+; change background colours
+
+        processor 6502
+        org $c000
+
+		cli
+start
+        ldx #$ff
+loop
+        txa
+		and #$f
+		sta $d021
+        nop
+        cpx #0
+        bne loop
+        dex
+		jmp start
+        rts

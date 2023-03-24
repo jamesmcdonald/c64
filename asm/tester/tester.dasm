@@ -1,0 +1,19 @@
+    incdir "../include"
+    include "c64_loader.dasm"
+
+    jsr cint
+
+    ldx #$02
+    ldy #$10
+    lda #$db
+    jsr hexposprint
+    ldx #$04
+    ldy #$11
+    jsr hexposprint
+    ldx #$06
+    ldy #$12
+    jsr hexposprint
+    rts
+
+    include "debug.dasm"
+

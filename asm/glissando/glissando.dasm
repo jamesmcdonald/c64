@@ -1,0 +1,201 @@
+; play every note
+
+    incdir "../include"
+    include "c64_loader.dasm"
+
+init:
+    jsr cint
+
+    jsr clearsid
+
+;;; init sid
+    lda #$f
+    sta sid+$18   ; turn amp to 11 - actually 24 :D
+
+    lda #$09
+    sta sid+$5    ; set sid voice 1 a/d
+    lda #$f0
+    sta sid+$6    ; set sid voice 1 s/r
+
+    lda #$00
+    sta sid       ; voice 1 low freq
+    lda #$00
+    sta sid+$01   ; voice 1 high freq
+
+    lda #$03
+    sta sid+$03   ; set pulse wave modulation
+
+   
+;;; draw UI
+    lda #$00              ; load zero-page vectors for screen, colour and ui
+    sta $fb
+    sta $f9
+    lda #$04
+    sta $fc
+    lda #$d8
+    sta $fa
+    lda #<ui
+    sta $fd
+    lda #>ui
+    sta $fe
+ui_line:
+    ldy #$00
+    lda ($fd),y
+    beq ui_end
+    ldx uilines
+    inx
+    stx uilines
+ui_char:
+    cmp #$40
+    bmi ui_char_mapped
+    cmp #$60
+    bpl ui_char_mapped
+    sec
+    sbc #$40      ; map letters to screen codes
+ui_char_mapped:
+    sta ($fb),y
+    lda uicolor
+    sta ($f9),y
+    iny
+    lda ($fd),y
+    bne ui_char
+    lda $fb       ; update write position
+    clc
+    adc #$28      ; add one screen line
+    sta $fb
+    sta $f9
+    bcc ui_update_read
+    lda $fc
+    adc #$00
+    sta $fc
+    lda $fa
+    sec
+    adc #$00
+    sta $fa
+ui_update_read:
+    iny          ; point y to next read line
+    tya          ; add y to read vector
+    clc
+    adc $fd
+    sta $fd
+    bcc ui_line
+    lda $fe
+    adc #$00
+    sta $fe
+    jmp ui_line
+ui_end
+
+loop:
+;;; update UI
+    lda low
+    ldx #$02
+    ldy #$0c
+    jsr hexposprint
+    lda high
+    ldx #$02
+    ldy #$0a
+    jsr hexposprint
+    lda rate
+    ldx #$02
+    ldy #$1a
+    jsr hexposprint
+
+;;; scan keyboard
+    ;jsr scnkey - don't need to call this with interrupts enabled
+    jsr getin
+    cmp #$0
+    beq afterkey
+
+keyq:
+    cmp #$51             ; q pressed, exit
+    bne keyw
+quit:
+    lda #$00
+    sta sid+$04          ; quiesce voice 1
+    ldx uilines
+    ldy #$00
+    clc
+    jsr plot
+    rts
+keyw:
+    cmp #$57             ; increase rate on w
+    bne keys
+    lda rate
+    clc
+    adc #$01
+    sta rate
+    jmp afterkey
+keys:
+    cmp #$53             ; decrease rate on s
+    bne keydefault
+    lda rate
+    sec
+    sbc #$01
+    sta rate
+    jmp afterkey
+keydefault:
+    ldx #$14
+    ldy #0
+    jsr hexposprint
+afterkey:
+
+; wait for scanline
+; not sure this works properly
+scanwait:
+    lda $d011
+    and #$80
+    bne scanwait
+	lda $d012
+    cmp #$f9
+    bne scanwait
+
+    lda #$11
+    sta sid+$04   ; bring the noise (triangular, voice 1)
+
+    lda low
+    clc
+    adc rate
+    sta low
+    sta sid
+    bcc skiphigh
+    lda high
+    adc #$00
+    ;bcs end
+    sta high
+    sta sid+1
+skiphigh:
+    jmp loop
+    
+end:
+    jsr clearsid
+    jmp quit
+
+clearsid:
+;;; clear sid
+    ldx #$18
+    lda #$00
+clearsid_loop:
+    sta sid,x
+    dex
+    bpl clearsid_loop
+    rts
+
+low dc #$00
+high dc #$00
+rate dc #$01
+wave dc #$10
+ui dc "        --- THE GLISSANDATOR ---        ", 0
+   dc " ", 0
+   dc "FREQUENCY      DIR   RATE", 0
+   dc "               (D)   (Z/X)", 0
+   dc " ", 0
+   dc "WAVE FORM", 0
+   dc "(T/S/P/N)", 0
+   dc " ", 0
+   dc "PULSE WIDTH", 0
+   dc "  (C/V)", 0
+   dc 0
+uicolor dc #$03
+uilines dc #$00 ; store the number of lines in the ui
+
+    include "debug.dasm"

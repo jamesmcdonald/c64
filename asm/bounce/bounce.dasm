@@ -1,0 +1,257 @@
+; bounce an object around the screen
+
+    incdir "../include"
+    include "c64_loader.dasm"
+
+init:
+    jsr cint
+    lda #$05        ; cbm ascii for "white"
+    jsr chrout      ; set kernal output colour
+    lda #$08
+    sta vic+$20     ; border
+    lda #$00
+    sta vic+$21     ; screen
+    lda #$07
+
+    sta vic+$27     ; sprite 0 colour
+    lda #$01
+    sta vic+$15     ; enable sprite 0
+    ;sta vic+$17     ; expand sprite 0 x
+    ;sta vic+$1d     ; expand sprite 0 y
+    lda #192
+    sta 2040        ; set sprite 0 pointer to 192
+    lda #100
+    sta vic+0       ; set sprite 0 x position
+    sta vic+1       ; set sprite 0 y position
+
+   
+;;; load sprite data
+    ldx #$00
+load:
+    lda smiley,x
+    sta 64*192,x
+    inx
+    cpx #$40
+    bne load
+
+setup:
+    lda #$01       ; set dx and dy to 1
+    sta dx
+    sta dy
+    lda #"X" - $40
+    sta $0400 + 40 * 10
+    lda #"Y" - $40
+    sta $0400 + 40 * 11
+    lda #$03
+    sta $d800 + 40 * 10
+    sta $d800 + 40 * 11
+
+loop:
+;;; update UI
+    lda vic
+    ldx #$0a
+    ldy #$04
+    jsr hexposprint
+    lda vic+$01
+    ldx #$0b
+    ldy #$02
+    jsr hexposprint
+    lda vic+$10
+    and #$1
+    ldx #$0a
+    ldy #$02
+    jsr hexposprint
+
+;;; scan keyboard
+    ;jsr scnkey - don't need to call this with interrupts enabled
+    jsr getin
+    cmp #$0
+    beq afterkey
+    cmp #$51             ; q pressed, exit
+    bne keycont
+    lda #$00
+    sta vic+$15          ; disable sprites
+    ldx #$0c
+    ldy #$00
+    clc
+    jsr plot
+    rts
+keycont:
+    ldx #0
+    ldy #0
+    jsr hexposprint
+afterkey:
+
+;;; keep y in bounds
+    lda vic+1
+    cmp #50
+    beq invy
+    cmp #229
+    beq invy
+    jmp conty
+invy:
+    lda #$01
+    jsr bump
+    lda dy     ; invert dy
+    eor #$fe
+    sta dy
+conty:
+
+;;; keep x in bounds (with stupid vic paging)
+    lda vic+$10
+    and 1
+    cmp #$00
+    bne x_1_check
+    lda vic
+    cmp #$18
+    bne contx
+    jmp invx
+x_1_check:
+    lda vic+$10
+    and 1
+    cmp #$01
+    bne contx
+    lda vic
+    cmp #$3f
+    bne contx
+invx:
+    ldx #$00
+    jsr bump
+    lda dx
+    eor #$fe
+    sta dx
+
+; wait for scanline
+; not sure this works properly
+scanwait:
+    lda $d011
+    and #$80
+    bne scanwait
+	lda $d012
+    cmp #$f9
+    bne scanwait
+
+; switch vic x page
+contx:
+    lda vic
+    cmp #$ff
+    bne x_min_check
+    lda dx
+    cmp #$01
+    bne contxpage
+    lda #$01
+    sta vic+$10
+    jmp contxpage
+x_min_check:
+    lda vic
+    bne contxpage
+    lda dx
+    cmp #$ff
+    bne contxpage
+    lda #$00
+    sta vic+$10
+
+contxpage:
+
+; update coordinates
+    lda vic
+    clc
+    adc dx
+    sta vic
+    lda vic+1
+    clc
+    adc dy
+    sta vic+1
+
+; delay
+    ldy #$08
+odelay:
+    ldx #$ff
+idelay:
+    dex
+    bne idelay
+    dey
+    bne odelay
+
+    jmp loop
+
+bump:
+    cpx #$00
+    bne bump_y
+    lda dx
+    bmi bump_minus_x
+    lda #"U"
+    jmp bump_print
+bump_minus_x:
+    lda #"A"
+    jmp bump_print
+bump_y:
+    lda dy
+    bmi bump_minus_y
+    lda #"O"
+    jmp bump_print
+bump_minus_y:
+    lda #"I"
+bump_print:
+    sta bumpstr+1
+    ldx #$0d
+    ldy #$02
+    clc
+    jsr plot
+    ldx #<bumpstr
+    ldy #>bumpstr
+    jsr print
+
+    lda #$00      ; silence sid voice 1
+    sta sid+$04 
+    sta sid+$0b 
+    lda #$09
+    sta sid+$5    ; set sid voice 1 a/d
+    lda #$08
+    sta sid+$c    ; set sid voice 2 a/d
+    lda #$00
+    sta sid+$6    ; set sid voice 1 s/r
+    sta sid+$d    ; set sid voice 2 s/r
+    lda #$f
+    sta sid+$18   ; turn amp to 11 - actually 24 :D
+    lda #$80
+    sta sid       ; voice 1 low freq
+    sta sid+$07   ; voice 2 low freq
+    lda #$16
+    sta sid+$01   ; voice 1 high freq
+    sta sid+$08   ; voice 2 high freq
+
+    ; mess around with voice 3 and add 2 to sid+4 for ring modulated triangle
+    ;lda #$60
+    ;sta sid+$0e   ; voice 3 low freq
+    ;lda #$10
+    ;sta sid+$0f   ; voice 3 high freq
+
+    lda #$03
+    sta sid+$03   ; set pulse wave modulation
+
+    lda #$81
+    sta sid+$04   ; bring the noise (noise, voice 1)
+    lda #$21
+    sta sid+$0b   ; bring the noise (sawtooth, voice 2)
+
+    rts
+
+;;; data
+smiley
+    dc 15, 255, 240, 56, 0, 28, 96, 0, 6
+    dc 192, 0, 3, 128, 0, 1, 128, 0, 1
+    dc 128, 0, 1, 134, 0, 97, 143, 0, 241
+    dc 143, 0, 241, 134, 0, 97, 128, 0, 1
+    dc 128, 0, 1, 140, 0, 49, 135, 0, 225
+    dc 129, 255, 129, 128, 126, 1, 192, 0, 3
+    dc 96, 0, 6, 56, 0, 28, 15, 255, 240
+
+x   dc 0
+y   dc 0
+dx  dc 0
+dy  dc 0
+bumpstr
+    dc "BxMP", $0
+
+    include "debug.dasm"

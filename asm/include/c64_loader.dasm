@@ -1,0 +1,9 @@
+    include "c64.dasm"
+
+    org $0801
+    ; basic program "10 SYS 2064"
+    byte $0c, $08, $0a, $00, $9e, " 2064", $00, $00, $00
+
+    org $0810
+
+

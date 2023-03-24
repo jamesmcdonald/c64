@@ -1,0 +1,12 @@
+; chip I/O start for offset
+vic = $d000
+sid = $d400
+
+; kernal routines
+chrout = $ffd2
+cint = $ff81
+getin = $ffe4
+plot = $fff0
+scnkey = $ff9f
+
+    processor 6502

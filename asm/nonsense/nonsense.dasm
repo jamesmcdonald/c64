@@ -1,0 +1,30 @@
+; print the string "nonsense" by size and by 0-termination
+
+        incdir "../include"
+        include "c64_loader.dasm"
+
+        ldx #0          ; copy 0 to x register, an extra "pair of hands"
+start                   ; a label to jump back to later
+        lda nons,x      ; pick up the letter at nons + x
+        jsr chrout      ; jump to the subroutine "chrout" to print the
+                        ; letter, then come back
+        inx             ; add 1 to x
+        cpx #8          ; compare x to 8 (8 - x)
+        bne start       ; branch (jump) back to "start" if not zero
+		lda #$0d
+		jsr chrout
+
+zstart:
+        ldx #0
+zloop:
+        lda znons,x
+        beq zfinish
+        jsr chrout
+        inx
+        bcs zfinish     ; stop if we exceed 256 characters
+        jmp zloop
+zfinish:
+        rts             ; return, the program is done
+
+nons    dc "NONSENSE"   ; the nons variable to load the letters from
+znons   dc "LOTS OF NONSENSE lower AND PI 3.14159",0 ; zero-terminated nons

@@ -1,0 +1,11 @@
+    processor 6502
+    org $c000
+
+    LDX #$00
+ST  LDA M,X
+    BEQ END
+    JSR $FFD2
+    INX
+    JMP ST
+END RTS
+M   BYTE "HELLO", $0D, $00
