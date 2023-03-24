@@ -92,6 +92,10 @@ loop:
     ldx #$02
     ldy #$1a
     jsr hexposprint
+    lda pulse
+    ldx #$08
+    ldy #$0c
+    jsr hexposprint
     ldx #$02
     ldy #$13
     clc
@@ -147,12 +151,24 @@ ui_after_wave:
     cmp #$d8             ; X - increase rate more
     bne .+5
     jmp incrate
-    cmp #$5a             ; z - increase rate
+    cmp #$5a             ; z - decrease rate
     bne .+5
     jmp decrate
-    cmp #$da             ; Z - increase rate more
+    cmp #$da             ; Z - decrease rate more
     bne .+5
     jmp decrate
+    cmp #$43             ; c - decrease rate
+    bne .+5
+    jmp decpulse
+    cmp #$c3             ; C - decrease rate more
+    bne .+5
+    jmp decpulse
+    cmp #$56             ; v - increase pulse
+    bne .+5
+    jmp incpulse
+    cmp #$d6             ; V - increase rate more
+    bne .+5
+    jmp incpulse
     cmp #$44             ; d - switch direction
     bne .+5
     jmp invdir
@@ -209,6 +225,34 @@ decrate_1:
     sec
     sbc #$01
     sta rate
+    jmp afterkey
+
+incpulse:
+    and #$80
+    tax
+    lda pulse
+    cpx #$80
+    bne incpulse_1
+    clc
+    adc #$0f
+incpulse_1:
+    clc
+    adc #$01
+    sta pulse
+    jmp afterkey
+
+decpulse:
+    and #$80
+    tax
+    lda pulse
+    cpx #$80
+    bne decpulse_1
+    sec
+    sbc #$0f
+decpulse_1:
+    sec
+    sbc #$01
+    sta pulse
     jmp afterkey
 
 invdir:
