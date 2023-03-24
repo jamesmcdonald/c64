@@ -102,6 +102,39 @@ loop:
     lda direction
     adc #$30
     jsr chrout
+    ldx #$05
+    ldy #$0a
+    clc
+    jsr plot
+    lda wave
+    cmp #$10
+    beq ui_triangle
+    cmp #$20
+    beq ui_sawtooth
+    cmp #$40
+    beq ui_pulse
+    cmp #$80
+    beq ui_noise
+    jmp ui_after_wave
+ui_triangle:
+    ldx #<n_triangle
+    ldy #>n_triangle
+    jmp ui_print_wave
+ui_sawtooth:
+    ldx #<n_sawtooth
+    ldy #>n_sawtooth
+    jmp ui_print_wave
+ui_pulse:
+    ldx #<n_pulse
+    ldy #>n_pulse
+    jmp ui_print_wave
+ui_noise:
+    ldx #<n_noise
+    ldy #>n_noise
+    jmp ui_print_wave
+ui_print_wave:
+    jsr print
+ui_after_wave:
 
 ;;; scan keyboard
     jsr getin
@@ -119,6 +152,22 @@ loop:
     cmp #$44             ; d - switch direction
     bne .+5
     jmp invdir
+    cmp #$54             ; t - triangle thief
+    bne .+7
+    ldx #$10
+    jmp setwave
+    cmp #$53             ; s - sawtooth
+    bne .+7
+    ldx #$20
+    jmp setwave
+    cmp #$50             ; p - pulse
+    bne .+7
+    ldx #$40
+    jmp setwave
+    cmp #$4e             ; n - noise
+    bne .+7
+    ldx #$80
+    jmp setwave
 keydefault:
     ldx #$14             ; print the keycode for unknown keys
     ldy #0
@@ -148,6 +197,11 @@ invdir:
     lda direction
     eor #$01
     sta direction
+    jmp afterkey
+
+setwave:
+    stx wave
+    jmp afterkey
 
 afterkey:
 
@@ -224,5 +278,10 @@ ui dc "        --- THE GLISSANDATOR ---        ", 0
    dc "  (C/V)", 0
    dc 0
 uicolor dc #$03
+n_triangle  dc "TRIANGLE   ", 0
+n_sawtooth  dc "SAWTOOTH   ", 0
+n_pulse     dc "PULSE WAVE ", 0
+n_noise     dc "WHITE NOISE", 0
+
 
     include "debug.dasm"
