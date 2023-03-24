@@ -42,9 +42,6 @@ ui_line:
     ldy #$00
     lda ($fd),y
     beq ui_end
-    ldx uilines
-    inx
-    stx uilines
 ui_char:
     cmp #$40
     bmi ui_char_mapped
@@ -101,7 +98,6 @@ loop:
     jsr hexposprint
 
 ;;; scan keyboard
-    ;jsr scnkey - don't need to call this with interrupts enabled
     jsr getin
     cmp #$0
     beq afterkey
@@ -110,12 +106,8 @@ keyq:
     cmp #$51             ; q pressed, exit
     bne keyw
 quit:
-    lda #$00
-    sta sid+$04          ; quiesce voice 1
-    ldx uilines
-    ldy #$00
-    clc
-    jsr plot
+    jsr clearsid
+    jsr cint
     rts
 keyw:
     cmp #$57             ; increase rate on w
@@ -140,7 +132,6 @@ keydefault:
 afterkey:
 
 ; wait for scanline
-; not sure this works properly
 scanwait:
     lda $d011
     and #$80
@@ -196,6 +187,5 @@ ui dc "        --- THE GLISSANDATOR ---        ", 0
    dc "  (C/V)", 0
    dc 0
 uicolor dc #$03
-uilines dc #$00 ; store the number of lines in the ui
 
     include "debug.dasm"
