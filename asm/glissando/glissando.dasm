@@ -107,20 +107,20 @@ loop:
     jsr getin
     cmp #$0
     beq afterkey
-    cmp #$51             ; q pressed, exit
+    cmp #$51             ; q - quit
     bne .+5              ; +5 because . points at 'bne'
     jmp quit
-    cmp #$58             ; increase rate on x
+    cmp #$58             ; x - increase rate
     bne .+5
     jmp incrate
-    cmp #$5a             ; decrease rate on z
+    cmp #$5a             ; z - decrease rate
     bne .+5
     jmp decrate
-    cmp #$44
+    cmp #$44             ; d - switch direction
     bne .+5
     jmp invdir
 keydefault:
-    ldx #$14
+    ldx #$14             ; print the keycode for unknown keys
     ldy #0
     jsr hexposprint
     jmp afterkey
@@ -164,6 +164,9 @@ scanwait:
     ora #$01
     sta sid+$04   ; bring the noise (wave+enable, voice 1)
 
+    lda direction
+    beq direction_down
+direction_up:
     lda low
     clc
     adc rate
@@ -172,10 +175,21 @@ scanwait:
     bcc skiphigh
     lda high
     adc #$00
-    ;bcs end
     sta high
     sta sid+1
 skiphigh:
+    jmp loop
+direction_down:
+    lda low
+    sec
+    sbc rate
+    sta low
+    sta sid
+    bcs skiphigh
+    lda high
+    sbc #$00
+    sta high
+    sta sid+1
     jmp loop
     
 end:
