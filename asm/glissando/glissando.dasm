@@ -10,7 +10,7 @@ init:
 
 ;;; init sid
     lda #$f
-    sta sid+$18   ; turn amp to 11 - actually 24 :D
+    sta sid+$18   ; why turn it up to 11 if you can turn it to 24?
 
     lda #$09
     sta sid+$5    ; set sid voice 1 a/d
@@ -24,7 +24,6 @@ init:
 
     lda #$03
     sta sid+$03   ; set pulse wave modulation
-
    
 ;;; draw UI
     lda #$00              ; load zero-page vectors for screen, colour and ui
@@ -96,39 +95,60 @@ loop:
     ldx #$02
     ldy #$1a
     jsr hexposprint
+    ldx #$02
+    ldy #$13
+    clc
+    jsr plot
+    lda direction
+    adc #$30
+    jsr chrout
 
 ;;; scan keyboard
     jsr getin
     cmp #$0
     beq afterkey
-
-keyq:
     cmp #$51             ; q pressed, exit
-    bne keyw
+    bne .+5              ; +5 because . points at 'bne'
+    jmp quit
+    cmp #$58             ; increase rate on x
+    bne .+5
+    jmp incrate
+    cmp #$5a             ; decrease rate on z
+    bne .+5
+    jmp decrate
+    cmp #$44
+    bne .+5
+    jmp invdir
+keydefault:
+    ldx #$14
+    ldy #0
+    jsr hexposprint
+    jmp afterkey
+
 quit:
     jsr clearsid
     jsr cint
     rts
-keyw:
-    cmp #$57             ; increase rate on w
-    bne keys
+
+incrate:
     lda rate
     clc
     adc #$01
     sta rate
     jmp afterkey
-keys:
-    cmp #$53             ; decrease rate on s
-    bne keydefault
+
+decrate:
     lda rate
     sec
     sbc #$01
     sta rate
     jmp afterkey
-keydefault:
-    ldx #$14
-    ldy #0
-    jsr hexposprint
+
+invdir:
+    lda direction
+    eor #$01
+    sta direction
+
 afterkey:
 
 ; wait for scanline
@@ -140,8 +160,9 @@ scanwait:
     cmp #$f9
     bne scanwait
 
-    lda #$11
-    sta sid+$04   ; bring the noise (triangular, voice 1)
+    lda wave
+    ora #$01
+    sta sid+$04   ; bring the noise (wave+enable, voice 1)
 
     lda low
     clc
@@ -175,6 +196,8 @@ low dc #$00
 high dc #$00
 rate dc #$01
 wave dc #$10
+direction dc #$01 ; 1 for up or 0 for down
+
 ui dc "        --- THE GLISSANDATOR ---        ", 0
    dc " ", 0
    dc "FREQUENCY      DIR   RATE", 0
