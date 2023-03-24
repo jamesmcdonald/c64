@@ -22,9 +22,6 @@ init:
     lda #$00
     sta sid+$01   ; voice 1 high freq
 
-    lda #$03
-    sta sid+$03   ; set pulse wave modulation
-   
 ;;; draw UI
     lda #$00              ; load zero-page vectors for screen, colour and ui
     sta $fb
@@ -139,14 +136,21 @@ ui_after_wave:
 ;;; scan keyboard
     jsr getin
     cmp #$0
-    beq afterkey
+    bne .+5
+    jmp afterkey
     cmp #$51             ; q - quit
     bne .+5              ; +5 because . points at 'bne'
     jmp quit
     cmp #$58             ; x - increase rate
     bne .+5
     jmp incrate
-    cmp #$5a             ; z - decrease rate
+    cmp #$d8             ; X - increase rate more
+    bne .+5
+    jmp incrate
+    cmp #$5a             ; z - increase rate
+    bne .+5
+    jmp decrate
+    cmp #$da             ; Z - increase rate more
     bne .+5
     jmp decrate
     cmp #$44             ; d - switch direction
@@ -180,14 +184,28 @@ quit:
     rts
 
 incrate:
+    and #$80
+    tax
     lda rate
+    cpx #$80
+    bne incrate_1
+    clc
+    adc #$0f
+incrate_1:
     clc
     adc #$01
     sta rate
     jmp afterkey
 
 decrate:
+    and #$80
+    tax
     lda rate
+    cpx #$80
+    bne decrate_1
+    sec
+    sbc #$0f
+decrate_1:
     sec
     sbc #$01
     sta rate
@@ -214,6 +232,9 @@ scanwait:
     cmp #$f9
     bne scanwait
 
+    lda pulse
+    sta sid+$03   ; set pulse wave modulation
+   
     lda wave
     ora #$01
     sta sid+$04   ; bring the noise (wave+enable, voice 1)
@@ -226,12 +247,10 @@ direction_up:
     adc rate
     sta low
     sta sid
-    bcc skiphigh
     lda high
     adc #$00
     sta high
     sta sid+1
-skiphigh:
     jmp loop
 direction_down:
     lda low
@@ -239,7 +258,6 @@ direction_down:
     sbc rate
     sta low
     sta sid
-    bcs skiphigh
     lda high
     sbc #$00
     sta high
@@ -265,6 +283,7 @@ high dc #$00
 rate dc #$01
 wave dc #$10
 direction dc #$01 ; 1 for up or 0 for down
+pulse dc #$01
 
 ui dc "        --- THE GLISSANDATOR ---        ", 0
    dc " ", 0
