@@ -213,7 +213,7 @@ bump_print:
     sta sid+$6    ; set sid voice 1 s/r
     sta sid+$d    ; set sid voice 2 s/r
     lda #$f
-    sta sid+$18   ; turn amp to 11 - actually 24 :D
+    sta sid+$18   ; turn amp to 11 - actually 15 :D
     lda #$80
     sta sid       ; voice 1 low freq
     sta sid+$07   ; voice 2 low freq

@@ -9,8 +9,8 @@ init:
     jsr clearsid
 
 ;;; init sid
-    lda #$f
-    sta sid+$18   ; why turn it up to 11 if you can turn it to 24?
+    lda volume
+    sta sid+$18
 
     lda #$09
     sta sid+$5    ; set sid voice 1 a/d
@@ -99,6 +99,10 @@ loop:
     lda pulse
     ldx #$08
     ldy #$0e
+    jsr hexposprint
+    lda volume
+    ldx #$0b
+    ldy #$07
     jsr hexposprint
     ldx #$02
     ldy #$13
@@ -200,6 +204,9 @@ ui_after_wave:
     bne .+7
     ldx #$80
     jmp setwave
+    cmp #$20
+    bne .+5
+    jmp mute
 keydefault:
     ldx #$14             ; print the keycode for unknown keys
     ldy #0
@@ -257,6 +264,13 @@ invdir:
 
 setwave:
     stx wave
+    jmp afterkey
+
+mute:
+    lda volume
+    eor #$0f
+    sta volume
+    sta sid+$18
     jmp afterkey
 
 afterkey:
@@ -324,6 +338,7 @@ rate dc $00
 wave dc $10
 direction dc $01 ; 1 for up or 0 for down
 pulse dc $00,$03
+volume dc $00
 
 ui dc "        --- THE GLISSANDATOR ---        ", 0
    dc " ", 0
@@ -335,6 +350,9 @@ ui dc "        --- THE GLISSANDATOR ---        ", 0
    dc " ", 0
    dc "PULSE WIDTH", 0
    dc "  (C/V)", 0
+   dc " ", 0
+   dc "VOLUME", 0
+   dc "(SPACE)", 0
    dc 0
 uicolor dc #$03
 n_triangle  dc "TRIANGLE   ", 0
