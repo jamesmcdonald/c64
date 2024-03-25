@@ -1,11 +1,12 @@
     processor 6502
     org $c000
 
-    LDX #$00
-ST  LDA M,X
-    BEQ END
-    JSR $FFD2
-    INX
-    JMP ST
-END RTS
-M   BYTE "HELLO", $0D, $00
+    ldx #$00                ; a2 00
+st  lda m,x                 ; bd 0f c0
+    beq end                 ; f0 07
+    jsr $ffd2               ; 20 d2 ff
+    inx                     ; e8
+    jmp st                  ; 4c 02 c0
+end rts                     ; 60
+m   byte "hello", $0d, $00  ; 48 45 4c 4c 4f 0d 00
+
