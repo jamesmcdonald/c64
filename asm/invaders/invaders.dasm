@@ -28,7 +28,7 @@ copy_charset
     ldx #0
 load_chars
     lda charmap_0,x
-    sta $3000 + 1 * 8,x
+    sta $3000 + 65 * 8,x
     inx
     cpx #120
     bne load_chars
