@@ -1,0 +1,57 @@
+    incdir "../include"
+    include "c64_loader.dasm"
+
+start
+    sei                 ; Disable interrupts during switchout
+    lda $1              ; Get the i/o port
+    and #$fb            ; Clear bit 2 (4)
+    sta $1              ; Switch d000 from vic i/o to character rom
+
+    ldx #$00
+    ldy #$10
+copy_charset
+    lda $d000,x
+    sta $3000,x
+    inx
+    bne copy_charset
+
+    inc copy_charset+2
+    inc copy_charset+5
+
+    dey
+    bne copy_charset
+
+    lda $1              ; Get the i/o port
+    ora #$04            ; Set bit 2 (4)
+    sta $1              ; Switch d000 back to vic i/o
+
+    ldx #0
+load_chars
+    lda charmap_0,x
+    sta $3000 + 1 * 8,x
+    inx
+    cpx #120
+    bne load_chars
+
+    lda vic+$18
+    and #$f0
+    ora #$c
+    sta vic+$18
+    cli                 ; Enable interrupts
+    rts
+
+; 2 character entity
+charmap_0:
+    .byte $0e, $1f, $35, $75, $ff, $31, $31, $71
+    .byte $00, $00, $80, $c0, $e0, $80, $80, $c0
+; 4 character entity
+charmap_1:
+    .byte $01, $07, $1e, $3e, $7f, $0e, $04, $00
+    .byte $f0, $fc, $bc, $be, $ff, $3e, $0e, $0e
+    .byte $1f, $7f, $7a, $fa, $ff, $f8, $e0, $e0
+    .byte $00, $c0, $f0, $f8, $fc, $e0, $40, $00
+; 3 character entity
+charmap_2:
+    .byte $06, $0f, $19, $36, $3f, $0c, $1c, $3c
+    .byte $03, $07, $8c, $db, $df, $71, $71, $71
+    .byte $00, $80, $c0, $60, $e0, $80, $c0, $e0
