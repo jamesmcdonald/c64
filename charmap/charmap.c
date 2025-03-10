@@ -50,12 +50,12 @@ int main(int argc, char *argv[]) {
   }
   int finished = 0;
   for (int entity = 0; !finished; entity++) {
-    int maxbytes = 0;
+    int width = 0;
     struct row rows[8];
     for (int i = 0; i < 8; i++) {
       rows[i] = decode_row(f);
-      if (rows[i].bytes > maxbytes)
-        maxbytes = rows[i].bytes;
+      if (rows[i].bytes > width)
+        width = rows[i].bytes;
       int c = fgetc(f);
       switch (c) {
       case EOF:
@@ -72,9 +72,9 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    printf("; %d character entity\n", maxbytes);
+    printf("; %d character entity\n", width);
     printf("charmap_%d:\n", entity);
-    for (int i = 0; i < maxbytes; i++) {
+    for (int i = 0; i < width; i++) {
       printf("    .byte");
       for (int j = 0; j < 8; j++) {
         printf(" $%02x%s", rows[j].content[i], j == 7 ? "" : ",");
