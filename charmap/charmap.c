@@ -35,7 +35,6 @@ loop_exit:
 #ifdef DEBUG
   printf("bytes: %d, content: %x %x %x %x\n", output.bytes, output.content[0],
          output.content[1], output.content[2], output.content[3]);
-  return output;
 #endif
   return output;
 }
