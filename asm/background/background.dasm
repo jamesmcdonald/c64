@@ -1,18 +1,16 @@
 ; change background colours
 
-        processor 6502
-        org $c000
+    incdir "../include"
+    include "c64_loader.dasm"
 
-		cli
 start
         ldx #$ff
 loop
         txa
 		and #$f
-		sta $d021
+		sta $d020
         nop
-        cpx #0
-        bne loop
         dex
+        bne loop
 		jmp start
         rts
