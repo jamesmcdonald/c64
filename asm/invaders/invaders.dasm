@@ -30,7 +30,7 @@ load_chars
     lda charmap_0,x
     sta $3000 + 65 * 8,x
     inx
-    cpx #120
+    cpx #charbytes
     bne load_chars
 
     lda vic+$18
@@ -55,3 +55,4 @@ charmap_2:
     .byte $06, $0f, $19, $36, $3f, $0c, $1c, $3c
     .byte $03, $07, $8c, $db, $df, $71, $71, $71
     .byte $00, $80, $c0, $60, $e0, $80, $c0, $e0
+charbytes = 72

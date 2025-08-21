@@ -1,0 +1,47 @@
+; a calculator
+
+    incdir "../include"
+    include "c64_loader.dasm"
+
+reg = $fb
+tmp = $c004
+
+init:
+    lda #0
+    sta $c000
+    sta $c001
+    sta $c002
+    sta $c003
+    lda #1
+    pha
+    lda #$c0
+    pha
+    lda #$00
+    pha
+    jsr add
+    rts
+
+add:
+    pla
+    sta tmp
+    pla
+    sta tmp+1
+    pla
+    sta reg
+    pla
+    sta reg+1
+    pla
+    ldy #$0
+    clc
+addloop:
+    adc (reg),y
+    sta (reg),y
+    lda #0
+    iny
+    cpy #4
+    bne addloop
+    lda tmp+1
+    pha
+    lda tmp
+    pha
+    rts

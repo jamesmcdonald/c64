@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "failed to open file: %s\n", strerror(errno));
   }
   int finished = 0;
+  int totalbytes = 0;
   for (int entity = 0; !finished; entity++) {
     int width = 0;
     struct row rows[8];
@@ -73,6 +74,7 @@ int main(int argc, char *argv[]) {
     }
 
     printf("; %d character entity\n", width);
+    totalbytes += 8 * width;
     printf("charmap_%d:\n", entity);
     for (int i = 0; i < width; i++) {
       printf("    .byte");
@@ -82,5 +84,7 @@ int main(int argc, char *argv[]) {
       printf("\n");
     }
   }
+  fclose(f);
+  printf("charbytes = %d\n", totalbytes);
   return 0;
 }
